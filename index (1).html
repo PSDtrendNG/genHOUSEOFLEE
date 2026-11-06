@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X Comment Generator</title>
+  <style>
+    :root {
+      --blue-50: #f0f7ff;
+      --blue-100: #e0effe;
+      --blue-200: #b9dcfe;
+      --blue-300: #7cc2fc;
+      --blue-400: #36a5f7;
+      --blue-500: #0c8ce9;
+      --blue-600: #0270c7;
+      --blue-700: #0359a1;
+      --text: #0f1c2e;
+      --text-light: #4a6078;
+      --white: #ffffff;
+      --border: #c8dff5;
+      --shadow: 0 4px 24px rgba(12, 140, 233, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(160deg, var(--blue-50) 0%, #fff 45%, var(--blue-100) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+    }
+    .container {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    header { text-align: center; padding: 12px 0 8px; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--blue-600);
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      margin-top: 6px;
+    }
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .counter {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--blue-600);
+      text-align: center;
+      padding: 10px 16px;
+      background: var(--blue-50);
+      border-radius: 10px;
+      border: 1px solid var(--blue-200);
+    }
+    .preview-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .preview {
+      background: var(--blue-50);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .preview.empty {
+      color: var(--text-light);
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      width: 100%;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--blue-500);
+      color: var(--white);
+      box-shadow: 0 4px 14px rgba(12, 140, 233, 0.35);
+    }
+    .btn-primary:hover { background: var(--blue-600); }
+    .btn-primary:disabled {
+      background: var(--blue-300);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: var(--white);
+      color: var(--blue-600);
+      border: 2px solid var(--blue-300);
+    }
+    .btn-secondary:hover {
+      background: var(--blue-50);
+      border-color: var(--blue-400);
+    }
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .hint {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-light);
+      padding: 8px 12px;
+      background: var(--blue-50);
+      border-radius: 8px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--blue-700);
+      color: var(--white);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    footer {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      text-align: center;
+    }
+    @media (min-width: 480px) {
+      h1 { font-size: 2rem; }
+      .actions { flex-direction: row; }
+      .actions button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>X Comment Generator</h1>
+      <p class="subtitle">PerthSanta x HOUSE OF LEE</p>
+    </header>
+    <div class="card">
+      <div class="counter" id="counter">Đã copy: 0 comment</div>
+      <div>
+        <div class="preview-label">Last generated comment</div>
+        <div class="preview empty" id="preview">Press Generate &amp; Copy to create a comment</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btnGenerate">Generate &amp; Copy</button>
+        <button class="btn-secondary" id="btnPost" disabled>Generate &amp; Post to X</button>
+      </div>
+      <div class="hint">Press Space to Generate &amp; Post to X</div>
+    </div>
+    <footer>No login required. All comments stay on your device.</footer>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    (function () {
+      const FIXED_SUFFIX = '\n\nPERTHSANTA HOUSE OF LEE\n\n#LeexPerthSanta';
+      const FIXED_LEN = FIXED_SUFFIX.length;
+      const MAX_BODY = 280 - FIXED_LEN - 4;
+
+      // Multi-language, one theme per comment. No Vietnamese.
+      const LANGS = {
+        en: {
+          visual: [
+            "PerthSanta's visuals are pure excellence today.",
+            "The visual of PerthSanta feels so premium and polished.",
+            "PerthSanta look incredible in every single frame.",
+            "Their visual presence is on another level tonight.",
+            "PerthSanta's overall look is absolutely striking.",
+            "Every shot of PerthSanta feels intentional and beautiful.",
+            "The visual quality of PerthSanta tonight is unreal.",
+            "PerthSanta bring such a refined visual impact.",
+            "Their visuals today are clean, sharp, and unforgettable.",
+            "PerthSanta's appearance is pure star power.",
+            "The way PerthSanta present themselves is flawless.",
+            "Visuals this strong are rare. PerthSanta deliver.",
+            "PerthSanta's look tonight is pure elegance.",
+            "Their visual identity feels so elevated and fresh.",
+            "PerthSanta own the frame with pure visual strength."
+          ],
+          handsome: [
+            "PerthSanta look so handsome tonight.",
+            "Their charm and good looks are on full display.",
+            "PerthSanta's visuals are pure attraction.",
+            "They look sharp, polished, and completely magnetic.",
+            "The handsomeness from PerthSanta is strong.",
+            "PerthSanta own every frame with pure style.",
+            "Their looks tonight are clean and captivating.",
+            "So handsome and full of presence. Unreal.",
+            "PerthSanta bring that effortless charm.",
+            "Their attractive vibe is impossible to miss.",
+            "Sharp looks and pure charisma from both.",
+            "PerthSanta look refined and striking.",
+            "The handsomeness is next level tonight.",
+            "They carry such a polished and attractive aura.",
+            "Pure visual appeal from PerthSanta."
+          ],
+          future: [
+            "Hope PerthSanta and HOUSE OF LEE collab again soon.",
+            "Already looking forward to the next HOUSE OF LEE moment.",
+            "Would love another PerthSanta x HOUSE OF LEE project.",
+            "Please make this partnership a regular thing.",
+            "Can't wait for the next drop with PerthSanta.",
+            "More collabs like this would be amazing.",
+            "Hoping this is just the beginning with HOUSE OF LEE.",
+            "Bring on the next PerthSanta x HOUSE OF LEE campaign.",
+            "Eager for whatever comes next from this pairing.",
+            "Keep this energy going with HOUSE OF LEE.",
+            "Looking forward to more moments like this.",
+            "This deserves a sequel with HOUSE OF LEE.",
+            "Already imagining the next release together.",
+            "Future collabs with HOUSE OF LEE will be special.",
+            "Hoping for many more chapters with HOUSE OF LEE."
+          ],
+          perthSantaMix: [
+            "Perth looks so handsome and cool. Santa is pure cuteness.",
+            "Perth's cool vibe is strong. Santa's sweetness shines.",
+            "Perth carries pure charm. Santa is just too adorable.",
+            "Perth's attractive energy plus Santa's cuteness is perfect.",
+            "Perth looks sharp and magnetic. Santa melts hearts.",
+            "Cool Perth and cute Santa. The balance is everything.",
+            "Perth's presence is strong. Santa's softness is special.",
+            "Handsome Perth and adorable Santa. Unreal chemistry.",
+            "Perth owns the cool factor. Santa brings pure sweetness.",
+            "Perth's vibe is captivating. Santa is endlessly cute.",
+            "Perth looks refined and cool. Santa is pure softness.",
+            "Sharp Perth and sweet Santa. They complement each other.",
+            "Perth's charisma is strong. Santa's cuteness is unmatched.",
+            "Cool confidence from Perth. Warm cuteness from Santa.",
+            "Perth stands out with style. Santa wins with pure charm."
+          ],
+          outfit: [
+            "PerthSanta's outfits look so polished tonight.",
+            "Their styling choices are clean and elevated.",
+            "The outfits on PerthSanta fit the vibe perfectly.",
+            "They look sharp and well put-together.",
+            "PerthSanta's fashion tonight is pure style.",
+            "The outfits enhance their presence so well.",
+            "Clean lines and strong styling. Perfect execution.",
+            "Their looks feel intentional and premium.",
+            "PerthSanta wear their outfits with pure confidence.",
+            "The outfit coordination is on point tonight.",
+            "Stylish, refined, and completely on brand.",
+            "Their fashion choices tonight are so well done.",
+            "The outfits add so much to their overall impact.",
+            "PerthSanta look elevated in every piece they wear.",
+            "Strong styling that matches their energy perfectly."
+          ],
+          thanks: [
+            "Thank you HOUSE OF LEE for inviting PerthSanta.",
+            "Grateful to HOUSE OF LEE for having PerthSanta.",
+            "Thanks HOUSE OF LEE for bringing PerthSanta on board.",
+            "Appreciate HOUSE OF LEE for inviting PerthSanta.",
+            "Thank you HOUSE OF LEE. Hope for the next collab.",
+            "So glad HOUSE OF LEE invited PerthSanta. Looking forward to more.",
+            "Thanks to HOUSE OF LEE for this collaboration.",
+            "Grateful that HOUSE OF LEE chose PerthSanta. Hope for more.",
+            "Thank you HOUSE OF LEE for the trust in PerthSanta.",
+            "Appreciate this invitation from HOUSE OF LEE.",
+            "Thanks HOUSE OF LEE. Excited for the next partnership.",
+            "Happy that HOUSE OF LEE invited PerthSanta. More please.",
+            "Thank you HOUSE OF LEE for another great moment with PerthSanta.",
+            "Grateful for HOUSE OF LEE welcoming PerthSanta. Next collab soon.",
+            "Thanks HOUSE OF LEE for making this happen with PerthSanta."
+          ]
+        },
+        th: {
+          visual: [
+            "วิชวล PerthSanta วันนี้ปังมาก",
+            "ภาพลักษณ์ PerthSanta ดูพรีเมียมสุดๆ",
+            "PerthSanta ดูดีในทุกเฟรม",
+            "พลังวิชวลของ PerthSanta แรงมาก",
+            "ลุคโดยรวมของ PerthSanta สวยและคม",
+            "ทุกช็อตของ PerthSanta ดูตั้งใจ",
+            "คุณภาพวิชวลของ PerthSanta วันนี้ไม่จริง",
+            "PerthSanta มีผลกระทบทางภาพที่ละเอียด",
+            "วิชวลวันนี้สะอาดและน่าจดจำ",
+            "การปรากฏตัวของ PerthSanta คือพลังดาว"
+          ],
+          handsome: [
+            "PerthSanta หล่อมากคืนนี้",
+            "เสน่ห์และความหล่อของพวกเขาเต็มที่",
+            "วิชวล PerthSanta คือแรงดึงดูดบริสุทธิ์",
+            "พวกเขาดูคม เรียบ และมีพลัง",
+            "ความหล่อจาก PerthSanta แรงมาก",
+            "PerthSanta ครองทุกเฟรมด้วยสไตล์",
+            "ลุคคืนนี้สะอาดและดึงดูด",
+            "หล่อและมีพลังมาก ไม่จริง",
+            "PerthSanta มีเสน่ห์แบบไม่ต้องพยายาม",
+            "ออร่าที่ดึงดูดของพวกเขาชัดเจน"
+          ],
+          future: [
+            "หวังว่า PerthSanta กับ HOUSE OF LEE จะร่วมงานกันอีก",
+            "รอคอยโมเมนต์ HOUSE OF LEE ครั้งต่อไปแล้ว",
+            "อยากเห็นโปรเจกต์ PerthSanta x HOUSE OF LEE อีก",
+            "ขอให้พาร์ทเนอร์นี้เป็นประจำเลย",
+            "รอ drop ถัดไปกับ PerthSanta อยู่",
+            "คอลแลบแบบนี้เยอะกว่านี้ก็ดี",
+            "หวังว่านี่เป็นแค่จุดเริ่มต้นกับ HOUSE OF LEE",
+            "รณรงค์ PerthSanta x HOUSE OF LEE ครั้งต่อไปมาเลย",
+            "ตื่นเต้นกับสิ่งที่จะมาจากคู่นี้",
+            "ขอให้พลังงานนี้ไปต่อกับ HOUSE OF LEE"
+          ],
+          perthSantaMix: [
+            "Perth หล่อและคูลมาก Santa น่ารักสุดๆ",
+            "ออร่าคูลของ Perth แรง ความหวานของ Santa สว่าง",
+            "Perth มีเสน่ห์บริสุทธิ์ Santa น่ารักเกิน",
+            "พลังดึงดูดของ Perth บวกความน่ารักของ Santa เป๊ะ",
+            "Perth ดูคมและมีพลัง Santa ทำให้ใจละลาย",
+            "Perth คูล Santa น่ารัก ความสมดุลคือทุกอย่าง",
+            "การปรากฏของ Perth แรง ความนุ่มของ Santa พิเศษ",
+            "Perth หล่อ Santa น่ารัก เคมีไม่จริง",
+            "Perth ครองคูลแฟคเตอร์ Santa นำความหวาน",
+            "ออร่า Perth ดึงดูด Santa น่ารักไม่สิ้นสุด"
+          ],
+          outfit: [
+            "ชุดของ PerthSanta คืนนี้ดูเรียบหรู",
+            "การเลือกสไตล์ของพวกเขาสะอาดและยกสูง",
+            "ชุดของ PerthSanta เข้ากับออร่าเป๊ะ",
+            "พวกเขาดูคมและจัดเต็ม",
+            "แฟชั่น PerthSanta คืนนี้คือสไตล์บริสุทธิ์",
+            "ชุดช่วยเสริมการปรากฏของพวกเขาดีมาก",
+            "เส้นสะอาดและสไตล์แรง เป๊ะ",
+            "ลุคของพวกเขารู้สึกตั้งใจและพรีเมียม",
+            "PerthSanta ใส่ชุดด้วยความมั่นใจ",
+            "การจับคู่ชุดคืนนี้ตรงจุด"
+          ],
+          thanks: [
+            "ขอบคุณ HOUSE OF LEE ที่เชิญ PerthSanta",
+            "ซาบซึ้งที่ HOUSE OF LEE ให้ PerthSanta มา",
+            "ขอบคุณ HOUSE OF LEE ที่พา PerthSanta มาร่วม",
+            "ขอบคุณ HOUSE OF LEE สำหรับการเชิญ PerthSanta",
+            "ขอบคุณ HOUSE OF LEE หวังคอลแลบครั้งต่อไป",
+            "ดีใจที่ HOUSE OF LEE เชิญ PerthSanta รอครั้งต่อไป",
+            "ขอบคุณ HOUSE OF LEE สำหรับคอลแลบนี้",
+            "ซาบซึ้งที่ HOUSE OF LEE เลือก PerthSanta หวังมีอีก",
+            "ขอบคุณ HOUSE OF LEE สำหรับความไว้วางใจใน PerthSanta",
+            "ขอบคุณ HOUSE OF LEE ที่ทำให้เกิดขึ้นกับ PerthSanta"
+          ]
+        },
+        ko: {
+          visual: [
+            "PerthSanta 비주얼이 오늘 최고예요.",
+            "비주얼이 정말 프리미엄이에요.",
+            "모든 프레임에서 멋져요.",
+            "비주얼 존재감이 한 단계 위예요.",
+            "전체 룩이 정말 인상적이에요.",
+            "모든 샷이 의도적이고 아름다워요.",
+            "비주얼 퀄리티가 비현실적이에요.",
+            "정제된 비주얼 임팩트를 줘요.",
+            "오늘 비주얼이 깔끔하고 잊을 수 없어요.",
+            "등장이 순수 스타 파워예요."
+          ],
+          handsome: [
+            "PerthSanta가 오늘 너무 잘생겼어요.",
+            "매력과 외모가 풀로 드러나요.",
+            "비주얼이 순수 매력이에요.",
+            "날카롭고 세련되고 자석 같아요.",
+            "잘생김이 정말 강해요.",
+            "모든 프레임을 스타일로 장악해요.",
+            "오늘 룩이 깔끔하고 매혹적이에요.",
+            "너무 잘생기고 존재감이 넘쳐요.",
+            "노력 없이 나오는 매력이 있어요.",
+            "매력적인 바이브가 놓칠 수 없어요."
+          ],
+          future: [
+            "PerthSanta와 HOUSE OF LEE 다음 콜라보 기대해요.",
+            "다음 HOUSE OF LEE 모먼트가 벌써 기다려져요.",
+            "또 다른 PerthSanta x HOUSE OF LEE 프로젝트 보고 싶어요.",
+            "이 파트너십이 정기적이면 좋겠어요.",
+            "다음 드롭이 벌써 기다려져요.",
+            "이런 콜라보가 더 많으면 좋겠어요.",
+            "HOUSE OF LEE와의 시작일 뿐이길 바라요.",
+            "다음 캠페인 빨리 나왔으면 해요.",
+            "이 듀오의 다음이 기대돼요.",
+            "이 에너지를 HOUSE OF LEE와 이어가길."
+          ],
+          perthSantaMix: [
+            "Perth는 잘생기고 쿨하고 Santa는 너무 귀여워요.",
+            "Perth의 쿨한 바이브가 강하고 Santa의 달콤함이 빛나요.",
+            "Perth는 순수 매력 Santa는 너무 사랑스러워요.",
+            "Perth의 매력과 Santa의 귀여움이 완벽해요.",
+            "Perth는 날카롭고 자석 같고 Santa는 마음을 녹여요.",
+            "쿨한 Perth와 귀여운 Santa. 균형이 전부예요.",
+            "Perth의 존재감이 강하고 Santa의 부드러움이 특별해요.",
+            "잘생긴 Perth와 사랑스러운 Santa. 케미가 비현실적이에요.",
+            "Perth가 쿨 팩터를 잡고 Santa가 달콤함을 줘요.",
+            "Perth의 바이브가 매혹적이고 Santa는 끝없이 귀여워요."
+          ],
+          outfit: [
+            "오늘 의상이 정말 세련됐어요.",
+            "스타일링 선택이 깔끔하고 고급스러워요.",
+            "의상이 바이브에 완벽하게 맞아요.",
+            "날카롭고 잘 갖춰진 룩이에요.",
+            "오늘 패션이 순수 스타일이에요.",
+            "의상이 존재감을 잘 살려줘요.",
+            "깔끔한 라인과 강한 스타일링. 완벽해요.",
+            "룩이 의도적이고 프리미엄이에요.",
+            "자신감 있게 의상을 소화해요.",
+            "의상 코디가 오늘 포인트예요."
+          ],
+          thanks: [
+            "HOUSE OF LEE가 PerthSanta를 초대해 주셔서 감사해요.",
+            "HOUSE OF LEE 덕분에 PerthSanta를 볼 수 있어서 고마워요.",
+            "HOUSE OF LEE가 PerthSanta를 합류시켜 주셔서 감사합니다.",
+            "HOUSE OF LEE의 초청에 감사드려요.",
+            "HOUSE OF LEE 감사합니다. 다음 콜라보를 기대해요.",
+            "HOUSE OF LEE가 PerthSanta를 초대해 주셔서 기쁩니다. 더 기대해요.",
+            "이 콜라보에 감사해요.",
+            "HOUSE OF LEE가 PerthSanta를 선택해 주셔서 감사해요. 더 많았으면.",
+            "PerthSanta에 대한 신뢰에 감사드립니다.",
+            "HOUSE OF LEE가 이뤄 주셔서 감사합니다."
+          ]
+        },
+        ja: {
+          visual: [
+            "PerthSantaのビジュアルが今日は最高です。",
+            "ビジュアルがとてもプレミアムに感じます。",
+            "毎フレームで素敵です。",
+            "ビジュアルの存在感が一段上です。",
+            "全体のルックが本当に印象的です。",
+            "すべてのショットが意図的で美しいです。",
+            "ビジュアルの質が非現実的です。",
+            "洗練されたビジュアルインパクトを与えます。",
+            "今日のビジュアルはクリーンで忘れられません。",
+            "登場が純粋なスターパワーです。"
+          ],
+          handsome: [
+            "PerthSantaが今夜とてもハンサムです。",
+            "魅力と見た目がフルに出ています。",
+            "ビジュアルが純粋な魅力です。",
+            "シャープで洗練されて磁力的です。",
+            "ハンサムさが本当に強いです。",
+            "すべてのフレームをスタイルで支配します。",
+            "今夜のルックはクリーンで魅力的です。",
+            "とてもハンサムで存在感が溢れます。",
+            "努力なしの魅力があります。",
+            "魅力的なバイブが見逃せません。"
+          ],
+          future: [
+            "PerthSantaとHOUSE OF LEEの次のコラボを期待します。",
+            "次のHOUSE OF LEEの瞬間がもう待ち遠しいです。",
+            "またPerthSanta x HOUSE OF LEEのプロジェクトが見たいです。",
+            "このパートナーシップが定期的になればいいです。",
+            "次のドロップがもう待ち遠しいです。",
+            "こんなコラボがもっとあればいいです。",
+            "HOUSE OF LEEとの始まりにすぎないことを願います。",
+            "次のキャンペーンが早く出ますように。",
+            "このデュオの次が楽しみです。",
+            "このエネルギーをHOUSE OF LEEと続けてほしいです。"
+          ],
+          perthSantaMix: [
+            "Perthはハンサムでクール、Santaは純粋に可愛いです。",
+            "Perthのクールなバイブが強く、Santaの甘さが輝きます。",
+            "Perthは純粋な魅力、Santaはとても愛らしいです。",
+            "Perthの魅力とSantaの可愛さが完璧です。",
+            "Perthはシャープで磁力的、Santaは心を溶かします。",
+            "クールなPerthと可愛いSanta。バランスがすべてです。",
+            "Perthの存在感が強く、Santaの柔らかさが特別です。",
+            "ハンサムなPerthと愛らしいSanta。ケミが非現実的です。",
+            "Perthがクールファクターを握り、Santaが甘さを届けます。",
+            "Perthのバイブが魅力的で、Santaは終わりなく可愛いです。"
+          ],
+          outfit: [
+            "今夜の衣装がとても洗練されています。",
+            "スタイリングの選択がクリーンで上質です。",
+            "衣装がバイブに完璧に合っています。",
+            "シャープで整ったルックです。",
+            "今夜のファッションが純粋なスタイルです。",
+            "衣装が存在感をよく引き立てます。",
+            "クリーンなラインと強いスタイリング。完璧です。",
+            "ルックが意図的でプレミアムです。",
+            "自信を持って衣装を着こなします。",
+            "衣装のコーディネートが今夜のポイントです。"
+          ],
+          thanks: [
+            "HOUSE OF LEEがPerthSantaを招待してくれてありがとう。",
+            "HOUSE OF LEEのおかげでPerthSantaを見られて嬉しいです。",
+            "HOUSE OF LEEがPerthSantaを参加させてくれて感謝です。",
+            "HOUSE OF LEEの招待に感謝します。",
+            "HOUSE OF LEEありがとう。次のコラボを期待します。",
+            "HOUSE OF LEEがPerthSantaを招待してくれて嬉しいです。もっと期待。",
+            "このコラボに感謝です。",
+            "HOUSE OF LEEがPerthSantaを選んでくれてありがとう。もっとほしいです。",
+            "PerthSantaへの信頼に感謝します。",
+            "HOUSE OF LEEが実現してくれてありがとうございます。"
+          ]
+        },
+        zh: {
+          visual: [
+            "PerthSanta今天的视觉太绝了。",
+            "视觉感觉很高级很精致。",
+            "每一帧都好看。",
+            "视觉存在感再上一个层次。",
+            "整体造型真的很抓人。",
+            "每一镜都感觉有用心。",
+            "视觉质量不真实。",
+            "带来很精炼的视觉冲击。",
+            "今天的视觉干净又难忘。",
+            "出场就是纯粹的星光。"
+          ],
+          handsome: [
+            "PerthSanta今晚好帅。",
+            "魅力和颜都拉满了。",
+            "视觉就是纯粹的吸引力。",
+            "又锐利又精致又有磁感。",
+            "帅感真的很强。",
+            "用风格掌控每一帧。",
+            "今晚的造型干净又抓人。",
+            "太帅了存在感满满。",
+            "有种不费力的魅力。",
+            "那种吸引人的感觉错过不了。"
+          ],
+          future: [
+            "希望PerthSanta和HOUSE OF LEE下次再合作。",
+            "已经在等下一次HOUSE OF LEE的时刻了。",
+            "想再看PerthSanta x HOUSE OF LEE的项目。",
+            "希望这个合作能常有。",
+            "下一次发布已经等不及了。",
+            "这样的联名再多一点就好了。",
+            "希望这只是和HOUSE OF LEE的开始。",
+            "下一次企划快点来。",
+            "对这个组合的下一步很期待。",
+            "希望这份能量和HOUSE OF LEE继续下去。"
+          ],
+          perthSantaMix: [
+            "Perth又帅又酷，Santa纯可爱。",
+            "Perth的酷感很强，Santa的甜感在发光。",
+            "Perth是纯粹魅力，Santa太可爱了。",
+            "Perth的吸引力和Santa的可爱刚刚好。",
+            "Perth锐利有磁感，Santa让人心软。",
+            "酷的Perth和可爱的Santa，平衡就是一切。",
+            "Perth存在感强，Santa的柔软很特别。",
+            "帅的Perth和可爱的Santa，化学作用不真实。",
+            "Perth拿住酷感，Santa带来甜感。",
+            "Perth的氛围很抓人，Santa可爱到没完。"
+          ],
+          outfit: [
+            "今晚的穿搭很精致。",
+            "造型选择干净又高级。",
+            "衣服和氛围完全贴合。",
+            "看起来锐利又完整。",
+            "今晚的时尚就是纯粹的风格。",
+            "穿搭很好地托起了存在感。",
+            "干净的线条和强造型，完美。",
+            "造型感觉有意图又高级。",
+            "自信地驾驭了整套穿搭。",
+            "今晚的穿搭搭配很到位。"
+          ],
+          thanks: [
+            "感谢HOUSE OF LEE邀请PerthSanta。",
+            "谢谢HOUSE OF LEE让我们看到PerthSanta。",
+            "感谢HOUSE OF LEE请来PerthSanta。",
+            "感谢HOUSE OF LEE的邀请。",
+            "感谢HOUSE OF LEE。希望下次再合作。",
+            "很高兴HOUSE OF LEE邀请PerthSanta。期待更多。",
+            "感谢这次合作。",
+            "感谢HOUSE OF LEE选择PerthSanta。希望还有更多。",
+            "感谢对PerthSanta的信任。",
+            "感谢HOUSE OF LEE促成这件事。"
+          ]
+        },
+        es: {
+          visual: [
+            "Los visuales de PerthSanta son pure excellence hoy.",
+            "El visual se siente tan premium y polished.",
+            "Se ven increíbles en cada frame.",
+            "Su presencia visual está en otro nivel.",
+            "El look general es absolutamente striking.",
+            "Cada toma se siente intencional y hermosa.",
+            "La calidad visual es unreal.",
+            "Aportan un impacto visual tan refined.",
+            "Sus visuales hoy son clean e inolvidables.",
+            "La aparición es pure star power."
+          ],
+          handsome: [
+            "PerthSanta se ven tan guapos esta noche.",
+            "Su encanto y buena presencia están a full.",
+            "Los visuales son pure attraction.",
+            "Se ven sharp, polished y magnéticos.",
+            "La handsomeness es fuerte.",
+            "Dominan cada frame con pure style.",
+            "Sus looks esta noche son clean y cautivadores.",
+            "Tan guapos y con tanta presencia. Unreal.",
+            "Traen ese encanto sin esfuerzo.",
+            "Su vibe atractiva es imposible de perder."
+          ],
+          future: [
+            "Espero otra collab de PerthSanta y HOUSE OF LEE pronto.",
+            "Ya espero el próximo momento con HOUSE OF LEE.",
+            "Me encantaría otro proyecto PerthSanta x HOUSE OF LEE.",
+            "Ojalá esta partnership sea algo regular.",
+            "No puedo esperar el próximo drop.",
+            "Más collabs así serían increíbles.",
+            "Ojalá esto sea solo el comienzo con HOUSE OF LEE.",
+            "Que venga la próxima campaña.",
+            "Ansioso por lo que venga de este dúo.",
+            "Que esta energía siga con HOUSE OF LEE."
+          ],
+          perthSantaMix: [
+            "Perth se ve tan guapo y cool. Santa es pure cuteness.",
+            "El cool vibe de Perth es fuerte. La dulzura de Santa brilla.",
+            "Perth carga pure charm. Santa es demasiado adorable.",
+            "La energía atractiva de Perth más la cuteness de Santa es perfect.",
+            "Perth se ve sharp y magnético. Santa derrite corazones.",
+            "Cool Perth y cute Santa. El balance es everything.",
+            "La presencia de Perth es fuerte. La suavidad de Santa es special.",
+            "Handsome Perth y adorable Santa. Química unreal.",
+            "Perth posee el cool factor. Santa trae pure sweetness.",
+            "El vibe de Perth es cautivador. Santa es endlessly cute."
+          ],
+          outfit: [
+            "Los outfits se ven tan polished esta noche.",
+            "Sus elecciones de styling son clean y elevated.",
+            "Los outfits encajan perfecto con el vibe.",
+            "Se ven sharp y bien puestos.",
+            "La moda esta noche es pure style.",
+            "Los outfits realzan su presencia tan bien.",
+            "Líneas clean y styling fuerte. Perfect.",
+            "Sus looks se sienten intencionales y premium.",
+            "Llevan sus outfits con confidence.",
+            "La coordinación de outfits está on point."
+          ],
+          thanks: [
+            "Gracias HOUSE OF LEE por invitar a PerthSanta.",
+            "Agradecido con HOUSE OF LEE por tener a PerthSanta.",
+            "Gracias HOUSE OF LEE por traer a PerthSanta.",
+            "Aprecio la invitación de HOUSE OF LEE.",
+            "Gracias HOUSE OF LEE. Espero la próxima collab.",
+            "Tan contento de que HOUSE OF LEE invitara a PerthSanta. Más por favor.",
+            "Gracias por esta colaboración.",
+            "Agradecido de que HOUSE OF LEE eligiera a PerthSanta. Espero más.",
+            "Gracias por la confianza en PerthSanta.",
+            "Gracias HOUSE OF LEE por hacer esto posible con PerthSanta."
+          ]
+        },
+        id: {
+          visual: [
+            "Visual PerthSanta hari ini pure excellence.",
+            "Visual terasa begitu premium dan polished.",
+            "Terlihat incredible di setiap frame.",
+            "Kehadiran visual di level lain.",
+            "Look keseluruhan absolutely striking.",
+            "Setiap shot terasa intentional dan indah.",
+            "Kualitas visual unreal.",
+            "Bawa refined visual impact.",
+            "Visual hari ini clean dan unforgettable.",
+            "Penampilan pure star power."
+          ],
+          handsome: [
+            "PerthSanta terlihat begitu ganteng malam ini.",
+            "Charm dan good looks full display.",
+            "Visual pure attraction.",
+            "Terlihat sharp, polished, dan magnetic.",
+            "Handsomeness kuat.",
+            "Kuasai setiap frame dengan pure style.",
+            "Look malam ini clean dan captivating.",
+            "Begitu ganteng dan penuh presence. Unreal.",
+            "Bawa effortless charm.",
+            "Attractive vibe mustahil dilewatkan."
+          ],
+          future: [
+            "Semoga PerthSanta dan HOUSE OF LEE collab lagi segera.",
+            "Sudah menunggu moment HOUSE OF LEE berikutnya.",
+            "Pengen ada project PerthSanta x HOUSE OF LEE lagi.",
+            "Semoga partnership ini jadi regular.",
+            "Nggak sabar drop berikutnya.",
+            "Lebih banyak collab kayak gini akan amazing.",
+            "Semoga ini baru awal dengan HOUSE OF LEE.",
+            "Ayo campaign berikutnya.",
+            "Antusias sama apa pun yang datang dari duo ini.",
+            "Teruskan energy ini dengan HOUSE OF LEE."
+          ],
+          perthSantaMix: [
+            "Perth terlihat begitu ganteng dan cool. Santa pure cuteness.",
+            "Cool vibe Perth kuat. Sweetness Santa bersinar.",
+            "Perth bawa pure charm. Santa terlalu adorable.",
+            "Attractive energy Perth plus cuteness Santa perfect.",
+            "Perth terlihat sharp dan magnetic. Santa lelehkan hati.",
+            "Cool Perth dan cute Santa. Balance is everything.",
+            "Presence Perth kuat. Softness Santa special.",
+            "Handsome Perth dan adorable Santa. Chemistry unreal.",
+            "Perth pegang cool factor. Santa bawa pure sweetness.",
+            "Vibe Perth captivating. Santa endlessly cute."
+          ],
+          outfit: [
+            "Outfit terlihat begitu polished malam ini.",
+            "Pilihan styling clean dan elevated.",
+            "Outfit cocok sempurna dengan vibe.",
+            "Terlihat sharp dan well put-together.",
+            "Fashion malam ini pure style.",
+            "Outfit perkuat presence begitu baik.",
+            "Clean lines dan strong styling. Perfect.",
+            "Look terasa intentional dan premium.",
+            "Kenakan outfit dengan confidence.",
+            "Koordinasi outfit on point malam ini."
+          ],
+          thanks: [
+            "Terima kasih HOUSE OF LEE sudah undang PerthSanta.",
+            "Bersyukur ke HOUSE OF LEE yang undang PerthSanta.",
+            "Makasih HOUSE OF LEE sudah bawa PerthSanta.",
+            "Appreciate undangan dari HOUSE OF LEE.",
+            "Terima kasih HOUSE OF LEE. Harap collab berikutnya.",
+            "Senang HOUSE OF LEE undang PerthSanta. Lebih banyak lagi.",
+            "Makasih untuk kolaborasi ini.",
+            "Bersyukur HOUSE OF LEE pilih PerthSanta. Harap lebih banyak.",
+            "Terima kasih atas kepercayaan ke PerthSanta.",
+            "Makasih HOUSE OF LEE sudah buat ini terjadi dengan PerthSanta."
+          ]
+        }
+      };
+
+      const LANG_KEYS = Object.keys(LANGS);
+      const THEME_KEYS = ['visual', 'handsome', 'future', 'perthSantaMix', 'outfit', 'thanks'];
+
+      function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function generateCommentBody() {
+        const lang = pick(LANG_KEYS);
+        const theme = pick(THEME_KEYS);
+        let body = pick(LANGS[lang][theme]);
+
+        body = body.replace(/\s+/g, ' ').trim();
+        if (['en', 'es', 'id'].includes(lang) && body.length > 0) {
+          body = body.charAt(0).toUpperCase() + body.slice(1);
+        }
+        if (!/[.!?。！？]$/.test(body)) {
+          body += (['zh', 'ja'].includes(lang) ? '。' : '.');
+        }
+
+        if (body.length > MAX_BODY) {
+          body = body.slice(0, MAX_BODY - 1).trim();
+          if (!/[.!?。！？]$/.test(body)) {
+            body += (['zh', 'ja'].includes(lang) ? '。' : '.');
+          }
+        }
+        return body;
+      }
+
+      function formatFullComment(body) {
+        return body + FIXED_SUFFIX;
+      }
+
+      const STORAGE_KEY = 'xcg_perthsanta_houseoflee_v1';
+      let state = { count: 0, history: [] };
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed.count === 'number' && Array.isArray(parsed.history)) {
+              state = parsed;
+            }
+          }
+        } catch (e) {}
+      }
+
+      function saveState() {
+        try {
+          if (state.history.length > 3000) {
+            state.history = state.history.slice(-3000);
+          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
+
+      let lastFullComment = null;
+
+      function updateUI() {
+        document.getElementById('counter').textContent = `Đã copy: ${state.count} comment`;
+        const preview = document.getElementById('preview');
+        if (lastFullComment) {
+          preview.textContent = lastFullComment;
+          preview.classList.remove('empty');
+          document.getElementById('btnPost').disabled = false;
+        }
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.remove('show'), 1800);
+      }
+
+      function generateUnique() {
+        for (let i = 0; i < 200; i++) {
+          const body = generateCommentBody();
+          if (!state.history.includes(body)) return body;
+        }
+        return generateCommentBody();
+      }
+
+      async function generateAndCopy(alsoPost) {
+        const body = generateUnique();
+        const full = formatFullComment(body);
+
+        try {
+          await navigator.clipboard.writeText(full);
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = full;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); }
+          catch (e2) {
+            showToast('Copy failed. Please copy manually.');
+            lastFullComment = full;
+            updateUI();
+            return;
+          }
+          document.body.removeChild(ta);
+        }
+
+        lastFullComment = full;
+        state.count += 1;
+        state.history.push(body);
+        saveState();
+        updateUI();
+        showToast(alsoPost ? 'Copied & opening X' : 'Comment copied');
+
+        if (alsoPost) {
+          setTimeout(() => {
+            const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(full);
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }, 300);
+        }
+      }
+
+      document.getElementById('btnGenerate').addEventListener('click', () => generateAndCopy(false));
+      document.getElementById('btnPost').addEventListener('click', () => generateAndCopy(true));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target === document.body) {
+          e.preventDefault();
+          generateAndCopy(true);
+        }
+      });
+
+      loadState();
+      updateUI();
+    })();
+  </script>
+</body>
+</html>
